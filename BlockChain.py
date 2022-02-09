@@ -145,7 +145,7 @@ class system:
     
 b=Blockchain(int(4))
 b.add_new_transaction('alice pay bob 100')
-
+b.add_new_transaction('alice pay bob 200')
 s=system(b)
 miner1=peer(s.Blockchain)
 s.miners.append(miner1)
@@ -158,7 +158,9 @@ print('########## miner 1 ##########\t\t')
 block_string = json.dumps(s.miners[0].basechain.chain[1].__dict__)
 print(block_string)
 
-#s.Broadcast()
+s.Broadcast()
+
+s.miners[1].miner()
 
 print('########## miner2 ##########\t\t')
 block_string = json.dumps(s.miners[1].basechain.chain[1].__dict__)
