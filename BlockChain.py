@@ -117,7 +117,8 @@ class Blockchain:
             block.hash, previous_hash = block_hash, block_hash
         print('55',result)
         return result
-    '''
+        '''
+    
     def copy_chain(self,Blockchain):
         self.chain = Blockchain.chain
         self.difficulty = Blockchain.difficulty
@@ -143,8 +144,7 @@ class system:
                
           
         if longest_chain:
-            self.BlockchainMain = longest_chain
-            print('last block in longest chain',json.dumps(longest_chain.chain[-1].__dict__))
+            self.BlockchainMain.chain = longest_chain.chain
             return True
 
         return False   
@@ -161,11 +161,67 @@ class system:
      def minebyminer(self,i):
         self.miners[i].add_new_transaction(self.BlockchainMain.unconfirmed_transactions)       
         b = self.miners[i].mine()
-        if b == True:
-            self.BlockchainMain.unconfirmed_transactions =[]        
+       # if b == True:
+        self.BlockchainMain.unconfirmed_transactions =[]        
+
+b=Blockchain()
+b.add_new_transaction('alice pay bob 100')
+s=system(b)
+s.add_miner() #miner [0]
+s.add_miner() #miner [1]
+s.add_miner() #attacker miner [2]
+
+s.minebyminer(0)
+s.Broadcast()
+#######
+attacker=Blockchain()
+attacker.chain = s.miners[2].chain + []
+
+attacker.add_new_transaction ('attacker transaction 1 ')
+attacker.mine()
+attacker.add_new_transaction ('attacker transaction 2 ')
+attacker.mine()
+attacker.add_new_transaction ('attacker transaction 3 ')
+attacker.mine()
+attacker.add_new_transaction ('attacker transaction 4 ')
+attacker.mine()
+ 
 
 
 
+s.BlockchainMain.add_new_transaction('alice pay bob 200') 
+s.minebyminer(0)
+s.BlockchainMain.add_new_transaction('alice pay bob 300') 
+s.minebyminer(0)
+s.Broadcast() #broadcast2
+
+for m in s.BlockchainMain.chain:
+    print('###########broadcast2#########\t\t')
+    block_string = json.dumps(m.__dict__)
+    print(block_string)
+
+
+s.miners[2].chain = []
+s.miners[2].chain = attacker.chain
+s.Broadcast()
+
+for m in s.BlockchainMain.chain:
+    print('###########brodcast3#########\t\t')
+    block_string = json.dumps(m.__dict__)
+    print(block_string)
+    
+
+
+
+
+
+
+
+
+
+
+
+'''
 b=Blockchain()
 b.add_new_transaction('alice pay bob 100')
 
@@ -190,7 +246,10 @@ block_string = json.dumps(s.miners[1].chain[1].__dict__)
 print(block_string)
 
 
-print(len(b.chain))
+print(len(s.BlockchainMain.chain))
+
+'''
+
 
 
 #s.Broadcast()
