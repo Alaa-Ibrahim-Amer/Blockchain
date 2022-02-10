@@ -1,5 +1,6 @@
 from hashlib import sha256
 import json
+from pickle import APPEND
 import time
 from random import randint
 
@@ -111,22 +112,85 @@ class system:
         self.miners.append(Blockchain())
         
      def minebyminer(self):
-        i=0
-        j=0
-    
-        for m in self.miners:
-             if  m.power != 11 :
-                 m.power = randint(0, 10)
-             if m.power >= i:
-                 index=j
-                 i=m.power
-             j=j+1
-             
+            i=0
+            j=0
+            
+            for m in self.miners:
+                    if  m.power != 11 :
+                        m.power = randint(0, 10)
+                    if m.power >= i:
+                        index=j
+                        i=m.power
+                    j=j+1
+                    
+            self.miners[index].add_new_transaction(self.BlockchainMain.unconfirmed_transactions)       
+            b = self.miners[index].mine()
+            if b == True:
+              self.BlockchainMain.unconfirmed_transactions =[]  
 
-        self.miners[index].add_new_transaction(self.BlockchainMain.unconfirmed_transactions)       
-        b = self.miners[index].mine()
-        if b == True:
-         self.BlockchainMain.unconfirmed_transactions =[]        
+            return index
+    
+
+'''
+# attacker speed scenario
+b=Blockchain()
+b.add_new_transaction('transaction 0')
+s=system(b)
+s.add_miner() #miner [0]
+s.add_miner() #attacker miner [1]
+
+s.minebyminer()
+s.Broadcast()
+
+attacker=Blockchain()
+attacker.chain = s.miners[0].chain + []
+attacker.power = 10
+attacker.add_new_transaction ('attacker transaction') #duoble spending
+attacker.mine()
+
+s.miners[0].chain = []
+s.miners[0].chain = attacker.chain + [] #attack here
+s.miners[0].power = attacker.power
+#s.Broadcast()
+
+i=1
+for i in range (5) :
+    s.BlockchainMain.add_new_transaction('transaction'+ str(i) )
+    index = s.minebyminer()
+    print('block',index,' mine the block')
+
+
+time_attack = []
+for x in s.miners[0].chain:
+    time_attack.append( x.timestamp)
+y = 0
+total_time = 0
+for y in range (len(time_attack)-1):
+    total_time = total_time + time_attack[y+1] - time_attack[y]
+    
+total_time = time.time() - total_time
+print ('time taken by attacker', time.localtime(total_time).tm_sec)
+print ('speed of attacker', time.localtime(total_time).tm_sec /len(s.miners[0].chain) )
+
+legit_time = []
+for x in s.miners[1].chain:
+    legit_time.append( x.timestamp)
+yy = 0
+total_time_ = 0
+for yy in range (len(legit_time)-1):
+    total_time_ = total_time_ + legit_time[yy+1] - legit_time[yy]
+    
+total_time_ = time.time() - total_time_
+
+print ('time taken by miners', time.localtime(total_time_).tm_sec)
+print ('speed of miners', time.localtime(total_time_).tm_sec /len(s.miners[1].chain) )
+
+s.Broadcast()
+for m in s.BlockchainMain.chain:
+    print('###########chain after attack#########\t\t')
+    block_string = json.dumps(m.__dict__)
+    print(block_string)
+'''
 
 
 # attacker scenario
@@ -182,6 +246,12 @@ for m in s.BlockchainMain.chain:
     print('###########chain after attack#########\t\t')
     block_string = json.dumps(m.__dict__)
     print(block_string)
+
+
+
+
+
+
     
 '''
 #difficulty scenario 
@@ -226,7 +296,7 @@ for i in range (10):
     timetaken =int ( t2-t1 ) * 1000
     print('>>>>>time taken by block',i,' in milliseconds = ', timetaken)
    
-    '''
+'''
    
 
 
