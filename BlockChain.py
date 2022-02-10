@@ -1,6 +1,5 @@
 from hashlib import sha256
 import json
-from pickle import APPEND
 import time
 from random import randint
 
