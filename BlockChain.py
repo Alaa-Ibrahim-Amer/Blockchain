@@ -1,7 +1,7 @@
 from hashlib import sha256
 import json
-from sqlite3 import Timestamp
 import time
+from random import randint
 
 class Block:
     def __init__(self, index, transactions, timestamp, previous_hash, nonce=0):
@@ -20,8 +20,8 @@ class Blockchain:
         self.unconfirmed_transactions = []
         self.chain = []
         self.create_genesis_block()
-     #   self.difficulty=self.calculate_difficulty() 
         self.difficulty = 4
+        self.power = 0
     
     def create_genesis_block(self):
         genesis_block = Block(0, [], time.time(), "0")
@@ -30,26 +30,6 @@ class Blockchain:
     @property
     def last_block(self):
         return self.chain[-1]
-
-    ''''
-    def calculate_difficulty(self):
-        difficulty = 0
-        t1 = time.time()
-        for i in range (10):
-            self.chain.add_new_transaction('alice pay bob 100')
-            self.chain.mine()
-
-        t2=time.time()
-        ml = int((t2-t1)* 1000)
-        print('>>>>>time taken in milliseconds = ', ml)
-        print('##########',i,'##########\t\t')
-        block_string = json.dumps(self.chain.chain[i].__dict__, sort_keys=True)
-        print(block_string)
-
-        return difficulty
-
-    '''
-
 
     def proof_of_work(self, block):
         block.nonce = 0 
@@ -86,51 +66,25 @@ class Blockchain:
                           transactions=self.unconfirmed_transactions,
                           timestamp=time.time(),
                           previous_hash=last_block.hash)
-        #t1 = time.time()
         proof = self.proof_of_work(new_block)
-        #t2=time.time()
-        #ml = int((t2-t1)* 1000)
-        #print('>>>>>time taken in milliseconds = ', ml)
         self.add_block(new_block, proof)
         self.unconfirmed_transactions = []
         
         
 
         return True
-    '''
-    def check_chain_validity(self, chain):
-        
-        result = True
-        previous_hash = "0"
-        # Iterate through every block
-        for block in chain:
-            block_hash = block.hash
-            # remove the hash field to recompute the hash again
-            # using `compute_hash` method.
-            delattr(block, "hash")
-
-            if not self.is_valid_proof(block, block.hash) or \
-                    previous_hash != block.previous_hash:
-                result = False
-                break
-
-            block.hash, previous_hash = block_hash, block_hash
-        print('55',result)
-        return result
-        '''
+    
     
     def copy_chain(self,Blockchain):
         self.chain = Blockchain.chain
         self.difficulty = Blockchain.difficulty
         self.unconfirmed_transactions = Blockchain.unconfirmed_transactions
 
-
 class system:
      def __init__(self,BlockchainMain):
          self.BlockchainMain = BlockchainMain
          self.miners = [] # list of Blockchain
 
-     
      def choose_longest_chain(self):
         longest_chain = None
         current_len = len(self.BlockchainMain.chain)
@@ -138,7 +92,6 @@ class system:
         for m in self.miners:
 
             if len(m.chain) > current_len :
-                # Longer valid chain found!
                 current_len = len(m.chain)
                 longest_chain = m
                
@@ -152,61 +105,81 @@ class system:
      def Broadcast(self):
         self.choose_longest_chain()
         for m in self.miners:
-            m.chain = self.BlockchainMain.chain
+            m.chain = self.BlockchainMain.chain +[]
      
      def add_miner(self):
         self.miners.append(Blockchain())
-        #self.miners[-1].add_new_transaction(self.BlockchainMain.unconfirmed_transactions)
-        #s.miners[-1].copy_chain(self.BlockchainMain)
-     def minebyminer(self,i):
-        self.miners[i].add_new_transaction(self.BlockchainMain.unconfirmed_transactions)       
-        b = self.miners[i].mine()
-       # if b == True:
-        self.BlockchainMain.unconfirmed_transactions =[]        
+        
+     def minebyminer(self):
+        i=0
+        j=0
+    
+        for m in self.miners:
+             if  m.power != 11 :
+                 m.power = randint(0, 10)
+             if m.power >= i:
+                 index=j
+                 i=m.power
+             j=j+1
+             
 
+        self.miners[index].add_new_transaction(self.BlockchainMain.unconfirmed_transactions)       
+        b = self.miners[index].mine()
+        if b == True:
+         self.BlockchainMain.unconfirmed_transactions =[]        
+
+
+# attacker scenario
 b=Blockchain()
-b.add_new_transaction('alice pay bob 100')
+b.add_new_transaction('transaction before attack')
 s=system(b)
 s.add_miner() #miner [0]
 s.add_miner() #miner [1]
 s.add_miner() #attacker miner [2]
 
-s.minebyminer(0)
+s.minebyminer()
 s.Broadcast()
-#######
+
 attacker=Blockchain()
 attacker.chain = s.miners[2].chain + []
-
-attacker.add_new_transaction ('attacker transaction 1 ')
+attacker.power = 11
+attacker.add_new_transaction ('attacker transaction') #duble spindding
 attacker.mine()
-attacker.add_new_transaction ('attacker transaction 2 ')
-attacker.mine()
-attacker.add_new_transaction ('attacker transaction 3 ')
-attacker.mine()
-attacker.add_new_transaction ('attacker transaction 4 ')
-attacker.mine()
- 
+
+for m in s.BlockchainMain.chain:
+    print('###########chain before attack#########\t\t')
+    block_string = json.dumps(m.__dict__)
+    print(block_string)
+
+s.BlockchainMain.add_new_transaction('transaction while attackeing 1 ') 
+s.minebyminer()
+s.BlockchainMain.add_new_transaction('transaction while attacking 2 ') 
+s.minebyminer()
 
 
-
-s.BlockchainMain.add_new_transaction('alice pay bob 200') 
-s.minebyminer(0)
-s.BlockchainMain.add_new_transaction('alice pay bob 300') 
-s.minebyminer(0)
 s.Broadcast() #broadcast2
 
 for m in s.BlockchainMain.chain:
-    print('###########broadcast2#########\t\t')
+    print('##########chains before the attacker become the longest chain##########\t\t')
     block_string = json.dumps(m.__dict__)
     print(block_string)
+
 
 
 s.miners[2].chain = []
-s.miners[2].chain = attacker.chain
+s.miners[2].chain = attacker.chain + [] #attack here
+s.miners[2].power = attacker.power
+
+s.BlockchainMain.add_new_transaction('transaction after attacking 1') 
+s.minebyminer()
+s.BlockchainMain.add_new_transaction('transaction after attacking 2') 
+s.minebyminer()
+
+
 s.Broadcast()
 
 for m in s.BlockchainMain.chain:
-    print('###########brodcast3#########\t\t')
+    print('###########chain after attack#########\t\t')
     block_string = json.dumps(m.__dict__)
     print(block_string)
     
@@ -214,105 +187,35 @@ for m in s.BlockchainMain.chain:
 
 
 
-
-
-
-
-
-
-
 '''
-b=Blockchain()
-b.add_new_transaction('alice pay bob 100')
+#dynamic difficulty scenario 
+def control_hardness (Blockchain,timeDiff):
+    N = Blockchain.difficulty
+    M = Blockchain.difficulty
+    if (1000 > timeDiff):
+        N = N + 1
+    if (1000 <= timeDiff and N - 1 > 0 ):
+        N = N - 1
+    Blockchain.difficulty = N
+    print('difficulty changes from: ',M,'to: ',N)
+   
 
-s=system(b)
-s.add_miner()
-s.minebyminer(0)
-print('########## miner 1 ##########\t\t')
-block_string = json.dumps(s.miners[0].chain[-1].__dict__)
-print(block_string)
-
-s.BlockchainMain.add_new_transaction('alice pay bob 200')
-s.add_miner()
-s.minebyminer(0)
-
-print('########## miner 0 ##########\t\t')
-block_string = json.dumps(s.miners[1].chain[-1].__dict__)
-print(block_string)
-print('########## base len ##########\t\t')
-s.Broadcast()
-print('########## miner 0 ##########\t\t')
-block_string = json.dumps(s.miners[1].chain[1].__dict__)
-print(block_string)
-
-
-print(len(s.BlockchainMain.chain))
-
-'''
-
-
-
-#s.Broadcast()
-
-#s.miners[1].miner()
-
-#print('########## miner2 ##########\t\t')
-#block_string = json.dumps(s.miners[1].basechain.chain[1].__dict__)
-#print(block_string)
-
-
-
-#s.choose_longest_chain()
-
-    
-
-
-
-
-
-
-
-
-'''
-def control_hardness (Blockchain):
-    t1 = Blockchain.chain[0].timestamp
-    t2 = time.time()
-    timeDiff =  int((t2 - t1) * 1000)
-    
-    while(Blockchain.difficulty < 4):
-        print('>>>>>time taken in milliseconds = ', timeDiff)
-        if(timeDiff >= 0):
-            Blockchain.difficulty =  Blockchain.difficulty + 1
-        if(timeDiff >= 1200 and  Blockchain.difficulty > 1):
-            Blockchain.difficulty =  Blockchain.difficulty - 1
-        print ( Blockchain.difficulty)
-    
-
+d = input("starting diffculty: ")
 chain=Blockchain()
-
-chain.add_new_transaction('alice pay bob')
-chain.mine()
-print('####################\t\t')
-block_string = json.dumps(chain.chain[-1].__dict__, sort_keys=True)
-print(block_string)
-control_hardness(chain)
-'''
-
-
-
-
-'''
-d = input("add diffculty: ")
-
-chain=Blockchain(int(d))
+chain.difficulty = int (d)
+timetaken = 0
 for i in range (10):
     chain.add_new_transaction('alice pay bob'+ str(i) )
+    control_hardness (chain,timetaken)
+    t1=time.time()
     chain.mine()
-    print('##########',i,'##########\t\t')
-    block_string = json.dumps(chain.chain[i].__dict__, sort_keys=True)
-    print(block_string)
+    t2=time.time()
    
-'''
+    timetaken =int ( t2-t1 ) * 1000
+    print('>>>>>time taken by block',i,' in milliseconds = ', timetaken)
+   
+    '''
+   
 
 
 
