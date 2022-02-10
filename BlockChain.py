@@ -183,7 +183,19 @@ for m in s.BlockchainMain.chain:
     block_string = json.dumps(m.__dict__)
     print(block_string)
     
-
+'''
+#difficulty scenario 
+d = input("add diffculty: ")
+chain=Blockchain()
+chain.difficulty = int (d)
+for i in range (5):
+    chain.add_new_transaction('alice pay bob'+ str(i) )
+    t1=time.time()
+    chain.mine()
+    t2=time.time()
+    timetaken =int ( t2-t1 ) * 1000
+    print('>>>>>time taken by block',i,' in milliseconds = ', timetaken)
+'''
 
 
 
